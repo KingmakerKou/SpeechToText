@@ -1,121 +1,88 @@
-# 🎙️ Multilingual Speech-to-Text & Machine Translation
+# 🔬 Diabetic Retinopathy Detection — Hybrid DenseNet121 + Transformer
 
-A deep learning-based multilingual Automatic Speech Recognition (ASR) system supporting **Hindi, English, Tamil, Telugu, and Malayalam** — with real-time transcription and English translation.
+![Python](https://img.shields.io/badge/Python-3.8%2B-blue) ![TensorFlow](https://img.shields.io/badge/TensorFlow-2.x-orange) ![License](https://img.shields.io/badge/License-MIT-green)
 
-> Built as part of the Innovation Practice Laboratory (19I620) at PSG College of Technology.
-
----
-
-## 🧠 What This Does
-
-- Transcribes spoken audio in 5 Indian languages using state-of-the-art ASR models
-- Translates transcribed text to English using **mBART**
-- Identifies the input language automatically before transcription
-- Runs through a clean **Gradio-based GUI** for real-time use
-- Evaluated rigorously using **WER (Word Error Rate)** and **CER (Character Error Rate)**
+A deep learning system for automated **5-class diabetic retinopathy severity classification** using a hybrid architecture combining **DenseNet121** (CNN) with **Multi-Head Self-Attention** (Transformer), trained on a custom combined dataset of **15,000+ retinal fundus images**.
 
 ---
 
-## 🏗️ System Architecture
+## 🏆 Results
+
+| Metric | Score |
+|--------|-------|
+| **Training Accuracy** | 98.83% |
+| **Validation Accuracy** | 85.52% (best) |
+| **Weighted F1-Score** | 0.83 |
+| **Macro Avg Precision** | 0.74 |
+
+### Classification Report
+
+| Class | Precision | Recall | F1-Score |
+|-------|-----------|--------|----------|
+| 0 — No DR | 0.97 | 0.99 | 0.98 |
+| 1 — Mild | 0.70 | 0.65 | 0.68 |
+| 2 — Moderate | 0.74 | 0.84 | 0.79 |
+| 3 — Severe | 0.64 | 0.32 | 0.42 |
+| 4 — Proliferative DR | 0.64 | 0.57 | 0.60 |
+
+### Training Curves & Confusion Matrix
+
+| Accuracy | Loss |
+|----------|------|
+| ![Accuracy](results/accuracy.png) | ![Loss](results/loss.png) |
+
+![Confusion Matrix](results/confusion_matrix.png)
+
+---
+
+## 🧠 Model Architecture
 
 ```
-Audio Input
-    │
-    ▼
-Language Identification
-    │
-    ├──► Wav2Vec2  (Hindi / English)
-    └──► Whisper   (Tamil / Telugu / Malayalam)
-         │
-         ▼
-   Transcribed Text
-         │
-         ▼
-      mBART
-         │
-         ▼
-   English Translation
+Input (224x224x3)
+    ↓
+DenseNet121 (ImageNet pretrained, frozen backbone)
+    ↓
+GlobalAveragePooling2D
+    ↓
+Dense(512, ReLU)
+    ↓
+Reshape → Multi-Head Attention (8 heads, key_dim=64)  ← Transformer Block
+    ↓
+Add & LayerNorm (Residual Connection)
+    ↓
+Dense(5, Softmax)  → 5-class output
 ```
 
----
-
-## 🗂️ Repository Structure
-
-```
-SpeechToText/
-│
-├── models/
-│   ├── EnglishSTT.py        # Wav2Vec2-based English ASR
-│   ├── HindiSTT.py          # Wav2Vec2-based Hindi ASR
-│   ├── TamilSTT.py          # Whisper fine-tuned for Tamil
-│   ├── TeluguSTT.py         # Whisper fine-tuned for Telugu
-│   └── MalayalamSTT.py      # Whisper fine-tuned for Malayalam
-│
-├── translation/
-│   └── mbart_translate.py   # mBART translation to English
-│
-├── training/
-│   └── fine_tune_whisper.py # Fine-tuning script with hyperparameters
-│
-├── evaluation/
-│   └── compute_metrics.py   # WER / CER computation
-│
-├── GUI.py                   # Gradio UI — main entry point
-├── requirements.txt
-└── README.md
-```
+The key idea: **DenseNet121 extracts rich spatial features** from retinal images, while the **Transformer attention mechanism** enables the model to focus on the most diagnostically relevant regions.
 
 ---
 
-## ⚙️ Models Used
+## 📦 Dataset
 
-| Language   | ASR Model           | Dataset                        |
-|------------|---------------------|--------------------------------|
-| English    | Wav2Vec2            | LibriSpeech                    |
-| Hindi      | Wav2Vec2            | Mozilla Common Voice           |
-| Tamil      | Whisper (fine-tuned)| Mozilla Common Voice           |
-| Telugu     | Whisper (fine-tuned)| Mozilla Common Voice           |
-| Malayalam  | Whisper (fine-tuned)| Mozilla Common Voice           |
+We combined and augmented three data sources to build a robust, balanced dataset of **15,000+ images**:
 
-**Translation:** `facebook/mbart-large-50-many-to-one-mmt`
+| Source | Description |
+|--------|-------------|
+| [APTOS 2019](https://www.kaggle.com/c/aptos2019-blindness-detection) | Kaggle Blindness Detection Challenge |
+| [Messidor](https://www.adcis.net/en/third-party/messidor/) | French diabetic retinopathy dataset |
+| **Custom Augmented** | Medical-grade augmentation applied to balance classes |
 
----
+### Medical Augmentation Techniques Applied
+- Rotation (±15°)
+- Horizontal flipping
+- Brightness adjustment (0.8x – 1.2x)
+- (Additional domain-specific transforms for class balancing)
 
-## 🔧 Training Hyperparameters
-
-| Parameter                  | Value     |
-|----------------------------|-----------|
-| Batch Size (Train & Eval)  | 4         |
-| Gradient Accumulation Steps| 2         |
-| Epochs                     | 5         |
-| Learning Rate              | 1e-5      |
-| Warmup Steps               | 50        |
-| Max Training Steps         | 100       |
-| Evaluation Strategy        | Steps (every 25) |
-| Mixed Precision (FP16)     | ✅ Enabled |
+> ⚠️ Dataset not included in this repo due to size. Download APTOS 2019 and Messidor from the links above.
 
 ---
 
-## 📊 Evaluation Metrics
-
-**Word Error Rate (WER):**
-
-$$WER = \frac{S + D + I}{N}$$
-
-Where S = Substitutions, D = Deletions, I = Insertions, N = Total words in reference.
-
-**Character Error Rate (CER):** Same formula at character level — more useful for morphologically complex scripts.
-
-The model was evaluated on held-out speech recordings across all 5 languages, including noisy conditions using SNR-based metrics.
-
----
-
-## 🚀 Getting Started
+## 🚀 How to Run
 
 ### 1. Clone the repo
 ```bash
-git clone https://github.com/KingmakerKou/SpeechToText.git
-cd SpeechToText
+git clone https://github.com/KingmakerKou/diabetic-retinopathy-hybrid-cnn-transformer.git
+cd diabetic-retinopathy-hybrid-cnn-transformer
 ```
 
 ### 2. Install dependencies
@@ -123,64 +90,46 @@ cd SpeechToText
 pip install -r requirements.txt
 ```
 
-### 3. Run the Gradio UI
-```bash
-python GUI.py
+### 3. Run on Kaggle (Recommended)
+This code is optimized to run on **Kaggle Notebooks** with GPU acceleration.
+- Upload `diabetic_retinopathy.py` to a Kaggle notebook
+- Add the APTOS 2019 dataset from Kaggle
+- Run all cells
+
+---
+
+## 🛠️ Tech Stack
+
+- **Deep Learning:** TensorFlow / Keras
+- **CNN Backbone:** DenseNet121 (pretrained on ImageNet)
+- **Attention:** Multi-Head Self-Attention (Transformer block)
+- **Data:** Pandas, NumPy, ImageDataGenerator
+- **Evaluation:** Scikit-learn (confusion matrix, classification report)
+- **Visualization:** Matplotlib, Seaborn
+
+---
+
+## 📁 Project Structure
+
+```
+diabetic-retinopathy-hybrid-cnn-transformer/
+├── diabetic_retinopathy.py   # Main model code
+├── requirements.txt          # Dependencies
+├── results/                  # Training plots & confusion matrix
+│   ├── accuracy.png
+│   ├── loss.png
+│   └── confusion_matrix.png
+└── README.md
 ```
 
-A local URL will appear in your terminal — open it in your browser to start transcribing.
-
 ---
 
-## 📦 Requirements
+## 👥 Team
 
-```
-torch
-transformers
-torchaudio
-gradio
-librosa
-datasets
-jiwer           # for WER/CER computation
-sentencepiece   # for mBART tokenizer
-```
-
-> **Hardware:** NVIDIA CUDA-enabled GPU recommended (RTX 3060 or higher). Runs on CPU but slower.
-
----
-
-## 🔍 Key Challenges Tackled
-
-- **Low-resource languages** — Tamil, Telugu, Malayalam have limited training data; addressed via fine-tuning on Mozilla Common Voice
-- **Code-switching** — handled through language identification before model routing
-- **Noisy environments** — noise-robust training via diverse audio samples
-- **Real-time latency** — optimized pipeline for near-instant transcription
-
----
-
-## 🔮 Future Work
-
-- Expand to more Indian languages (Bengali, Kannada, Odia)
-- Deploy as a mobile/web app
-- Improve context-awareness for domain-specific vocabulary
-- Implement streaming transcription (word-by-word output)
-
----
-
-## 👨‍💻 Team
-
-| Name              | Roll No |
-|-------------------|---------|
-| Govarthanestan P  | 22I219  |
-| Kamalesh M        | 22I228  |
-| Koushik M         | 22I231  |
-| Lokeshwaran G     | 22I232  |
-| Soundar Raj M     | 22I261  |
-
-**Faculty Guide:** Dr. T. Vairam, Assistant Professor (Sl.Gr.), Dept. of IT, PSG College of Technology
+Built as a final year B.Tech project at **PSG College of Technology, Coimbatore**
 
 ---
 
 ## 📄 License
 
-This project is for academic purposes under PSG College of Technology's Innovation Practice Laboratory course.
+This project is licensed under the MIT License.
