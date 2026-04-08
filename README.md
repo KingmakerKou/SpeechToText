@@ -3,6 +3,9 @@
 A deep learning-based multilingual Automatic Speech Recognition (ASR) system supporting **Hindi, English, Tamil, Telugu, and Malayalam** — with real-time transcription and English translation.
 
 > Built as part of the Innovation Practice Laboratory (19I620) at PSG College of Technology.
+## 🎛️ GUI Demo
+
+![GUI](readme_images/gui_demo.png)
 
 ---
 
@@ -109,6 +112,19 @@ Where S = Substitutions, D = Deletions, I = Insertions, N = Total words in refer
 The model was evaluated on held-out speech recordings across all 5 languages, including noisy conditions using SNR-based metrics.
 
 ---
+## 📈 WER Results
+
+### English
+![English](readme_images/wer_english.png)
+
+### Tamil
+![Tamil](readme_images/wer_tamil.png)
+
+### Telugu
+![Telugu](readme_images/wer_telugu.png)
+
+### WER Formula
+![Formula](readme_images/wer_formula.png)
 
 ## 🚀 Getting Started
 
