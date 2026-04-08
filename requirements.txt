@@ -1,0 +1,8 @@
+torch
+transformers
+torchaudio
+gradio
+librosa
+datasets
+jiwer
+sentencepiece
